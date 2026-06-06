@@ -213,12 +213,19 @@ fi
 # shellcheck source=/dev/null
 source "${EXPORT_SCRIPT}"
 
+# --- PROJECT-SPECIFIC CCACHE ENABLING ---
+# Force CMake to pass all compilation tasks through ccache
+export IDF_CCACHE_ENABLE=1
+export EXTRA_CMAKE_SWITCHES="-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+# ---------------------------------------
+
 cd "${ESP32_DIR}"
 
 # Set target if build dir doesn't exist yet or target changed
 if [[ ! -f "${BUILD_DIR}/build.ninja" ]]; then
     echo "Setting IDF target to ${IDF_TARGET}..."
-    idf.py -B "${BUILD_DIR}" set-target "${IDF_TARGET}"
+    # Inject the switches here for target initialization
+    idf.py ${EXTRA_CMAKE_SWITCHES} -B "${BUILD_DIR}" set-target "${IDF_TARGET}"
 fi
 
 # Flash Bruce's app image into the ota_1 slot, and make sure otadata is erased
@@ -245,7 +252,7 @@ flash_bruce() {
 }
 
 if [[ "${BUILD_ONLY}" -eq 1 ]]; then
-    idf.py -B "${BUILD_DIR}" -DFLIPPER_BOARD="${BOARD}" reconfigure build
+    idf.py -B "${BUILD_DIR}" -DFLIPPER_BOARD="${BOARD}" build
     echo
     echo "Build complete (--build-only). Nothing flashed."
     exit 0
